@@ -43,10 +43,23 @@ class LeadForm(forms.Form):
 
 
 class CustomUserCreationForm(UserCreationForm):
+    email = forms.EmailField()
+
     class Meta:
         model = User
-        fields = ("username",)
-        field_classes = {'username': UsernameField}
+        fields = ("username", "email", "password1", "password2")
+
+        field_classes = {
+            'username': UsernameField,
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(CustomUserCreationForm, self).__init__(*args, **kwargs)
+
+        for field_name in ('username', 'email', 'password1', 'password2'):
+                self.fields[field_name].help_text = ''
+    
+    
 
 
 class AssignAgentForm(forms.Form):

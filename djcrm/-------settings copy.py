@@ -1,21 +1,23 @@
-import os
 from pathlib import Path
-# import environ
+import environ
 
-# env = environ.Env(
-#     DEBUG=(bool, False)
-# )
+env = environ.Env()
 
-# READ_DOT_ENV_FILE = env.bool('READ_DOT_ENV_FILE', default=False)
-# if READ_DOT_ENV_FILE:
-#     environ.Env.read_env()
+# read th.env file
+environ.Env.read_env()
 
-# DEBUG = env('DEBUG')
-SECRET_KEY = 'ene123'  #env('SECRET_KEY')
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+
+READ_DOT_ENV_FILE = env.bool('READ_DOT_ENV_FILE', default=False)
+if READ_DOT_ENV_FILE:
+    environ.Env.read_env()
+
+DEBUG = env('DEBUG')
+SECRET_KEY = env('SECRET_KEY')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-
-DEBUG = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 ALLOWED_HOSTS = ['*']
@@ -36,6 +38,7 @@ INSTALLED_APPS = [
     "crispy_tailwind",
     'tailwind',
     'theme',
+    'environ',
 
     # Local apps
     'leads',
@@ -77,12 +80,25 @@ WSGI_APPLICATION = 'djcrm.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': env("DB_NAME"),
+#         'USER': env("DB_USER"),
+#         'PASSWORD': env("DB_PASSWORD"),
+#         'HOST': env("DB_HOST"),
+#         'PORT': env("DB_PORT"),
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+
 
 
 # Password validation
@@ -177,3 +193,4 @@ LOGGING = {
 }
 
 TAILWIND_APP_NAME = 'theme'
+DEFAULT_AUTO_FIELD='django.db.models.AutoField' # default value for auto_field

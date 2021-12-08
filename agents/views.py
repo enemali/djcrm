@@ -28,20 +28,22 @@ class AgentCreateView(OrganisorAndLoginRequiredMixin, generic.CreateView):
         user = form.save(commit=False)
         user.is_agent = True
         user.is_organisor = False
-        user.set_password(f"{random.randint(0, 1000000)}")
+        user.set_password(form.cleaned_data["password"])
+        # user.set_password(f"{random.randint(0, 1000000)}")
         user.save()
         Agent.objects.create(
             user=user,
             organisation=self.request.user.userprofile
         )
         send_mail(
-            subject="You are invited to be an agent",
-            message="You were added as an agent on DJCRM. Please come login to start working.",
-            from_email="admin@test.com",
+            subject="You are invited to be an Agent",
+            message="You were added as an agent on Mudase-CRM. Please login to start working." + "\n" 
+            + "Username: " + user.username + "\n" + "Password: " + form.cleaned_data["password"] + "\n"
+             + "http://" + self.request.META["HTTP_HOST"] + "/login/" + "\n" + "Thank you." + "\n" + "Mudase-CRM",
+            from_email="malitician@gmail.com",
             recipient_list=[user.email]
         )
         return super(AgentCreateView, self).form_valid(form)
-
 
 class AgentDetailView(OrganisorAndLoginRequiredMixin, generic.DetailView):
     template_name = "agents/agent_detail.html"

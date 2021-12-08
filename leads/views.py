@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.views import generic
 from agents.mixins import OrganisorAndLoginRequiredMixin
-from .models import Lead, Agent, Category, FollowUp
+from .models import Lead, Agent, Category, FollowUp, Expense
 from .forms import (
     LeadForm, 
     LeadModelForm, 
@@ -17,7 +17,8 @@ from .forms import (
     AssignAgentForm, 
     LeadCategoryUpdateForm,
     CategoryModelForm,
-    FollowUpModelForm
+    FollowUpModelForm,
+    ExpenseModelForm
 )
 
 
@@ -90,7 +91,7 @@ class LeadListView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         user = self.request.user
         # initial queryset of leads for the entire organisation
-        if user.is_organisor:
+        if user.is_admin:
             queryset = Lead.objects.filter(
                 organisation=user.userprofile, 
                 agent__isnull=False
@@ -107,7 +108,7 @@ class LeadListView(LoginRequiredMixin, generic.ListView):
     def get_context_data(self, **kwargs):
         context = super(LeadListView, self).get_context_data(**kwargs)
         user = self.request.user
-        if user.is_organisor:
+        if user.is_admin:
             queryset = Lead.objects.filter(
                 organisation=user.userprofile, 
                 agent__isnull=True
@@ -133,7 +134,7 @@ class LeadDetailView(LoginRequiredMixin, generic.DetailView):
     def get_queryset(self):
         user = self.request.user
         # initial queryset of leads for the entire organisation
-        if user.is_organisor:
+        if user.is_admin:
             queryset = Lead.objects.filter(organisation=user.userprofile)
         else:
             queryset = Lead.objects.filter(organisation=user.agent.organisation)
@@ -265,7 +266,7 @@ class CategoryListView(LoginRequiredMixin, generic.ListView):
         context = super(CategoryListView, self).get_context_data(**kwargs)
         user = self.request.user
 
-        if user.is_organisor:
+        if user.is_admin:
             queryset = Lead.objects.filter(
                 organisation=user.userprofile
             )
@@ -282,7 +283,7 @@ class CategoryListView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         user = self.request.user
         # initial queryset of leads for the entire organisation
-        if user.is_organisor:
+        if user.is_admin:
             queryset = Category.objects.filter(
                 organisation=user.userprofile
             )
@@ -300,7 +301,7 @@ class CategoryDetailView(LoginRequiredMixin, generic.DetailView):
     def get_queryset(self):
         user = self.request.user
         # initial queryset of leads for the entire organisation
-        if user.is_organisor:
+        if user.is_admin:
             queryset = Category.objects.filter(
                 organisation=user.userprofile
             )
@@ -335,7 +336,7 @@ class CategoryUpdateView(OrganisorAndLoginRequiredMixin, generic.UpdateView):
     def get_queryset(self):
         user = self.request.user
         # initial queryset of leads for the entire organisation
-        if user.is_organisor:
+        if user.is_admin:
             queryset = Category.objects.filter(
                 organisation=user.userprofile
             )
@@ -355,7 +356,7 @@ class CategoryDeleteView(OrganisorAndLoginRequiredMixin, generic.DeleteView):
     def get_queryset(self):
         user = self.request.user
         # initial queryset of leads for the entire organisation
-        if user.is_organisor:
+        if user.is_admin:
             queryset = Category.objects.filter(
                 organisation=user.userprofile
             )
@@ -373,7 +374,7 @@ class LeadCategoryUpdateView(LoginRequiredMixin, generic.UpdateView):
     def get_queryset(self):
         user = self.request.user
         # initial queryset of leads for the entire organisation
-        if user.is_organisor:
+        if user.is_admin:
             queryset = Lead.objects.filter(organisation=user.userprofile)
         else:
             queryset = Lead.objects.filter(organisation=user.agent.organisation)
@@ -426,7 +427,7 @@ class FollowUpUpdateView(LoginRequiredMixin, generic.UpdateView):
     def get_queryset(self):
         user = self.request.user
         # initial queryset of leads for the entire organisation
-        if user.is_organisor:
+        if user.is_admin:
             queryset = FollowUp.objects.filter(lead__organisation=user.userprofile)
         else:
             queryset = FollowUp.objects.filter(lead__organisation=user.agent.organisation)
@@ -448,7 +449,7 @@ class FollowUpDeleteView(OrganisorAndLoginRequiredMixin, generic.DeleteView):
     def get_queryset(self):
         user = self.request.user
         # initial queryset of leads for the entire organisation
-        if user.is_organisor:
+        if user.is_admin:
             queryset = FollowUp.objects.filter(lead__organisation=user.userprofile)
         else:
             queryset = FollowUp.objects.filter(lead__organisation=user.agent.organisation)
@@ -456,7 +457,26 @@ class FollowUpDeleteView(OrganisorAndLoginRequiredMixin, generic.DeleteView):
             queryset = queryset.filter(lead__agent__user=user)
         return queryset
 
+class ExpenseCreateView(LoginRequiredMixin, generic.CreateView):
+    template_name = "leads/expense_create.html"
+    form_class = ExpenseModelForm
 
+    def get_success_url(self):
+        return reverse("leads:lead-detail", kwargs={"pk": self.kwargs["pk"]})
+
+    def get_context_data(self, **kwargs):
+        context = super(ExpenseCreateView, self).get_context_data(**kwargs)
+        context.update({
+            "lead": Lead.objects.get(pk=self.kwargs["pk"])
+        })
+        return context
+
+    def form_valid(self, form):
+        lead = Lead.objects.get(pk=self.kwargs["pk"])
+        expense = form.save(commit=False)
+        expense.lead = lead
+        expense.save()
+        return super(ExpenseCreateView, self).form_valid(form)
 
 # def lead_update(request, pk):
 #     lead = Lead.objects.get(id=pk)

@@ -1,11 +1,13 @@
 from django.db import models
 from django.db.models.signals import post_save
 from django.contrib.auth.models import AbstractUser
+from .Allchoise import*
 
 
 class User(AbstractUser):
-    is_organisor = models.BooleanField(default=True)
+    is_admin = models.BooleanField(default=True)
     is_agent = models.BooleanField(default=False)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='other')
 
 
 class UserProfile(models.Model):
@@ -26,11 +28,12 @@ class Lead(models.Model):
     age = models.IntegerField(default=0)
     organisation = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     agent = models.ForeignKey("Agent", null=True, blank=True, on_delete=models.SET_NULL)
+    source = models.CharField(choices=(SOURCE_CHOICES), max_length=100 , default='Other')
     category = models.ForeignKey("Category", related_name="leads", null=True, blank=True, on_delete=models.SET_NULL)
     description = models.TextField()
     date_added = models.DateTimeField(auto_now_add=True)
     phone_number = models.CharField(max_length=20)
-    email = models.EmailField()
+    email = models.EmailField( max_length=254, blank=True, null=True)
     profile_picture = models.ImageField(null=True, blank=True, upload_to="profile_pictures/")
     converted_date = models.DateTimeField(null=True, blank=True)
 
@@ -59,7 +62,8 @@ class Agent(models.Model):
     organisation = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.user.email
+        return self.user.first_name + " " + self.user.last_name
+
 
 
 class Category(models.Model):
@@ -69,6 +73,14 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+class Expense(models.Model):
+    name = models.CharField(max_length=50)
+    amount = models.IntegerField()
+    date = models.DateField( auto_now_add=True)
+    Agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
 
 def post_user_created_signal(sender, instance, created, **kwargs):
     if created:

@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.views import generic
 from agents.mixins import OrganisorAndLoginRequiredMixin
-from .models import Lead, Agent, Category, FollowUp, Expense
+from .models import Lead, Agent, Category, FollowUp
 from .forms import (
     LeadForm, 
     LeadModelForm, 
@@ -18,7 +18,7 @@ from .forms import (
     LeadCategoryUpdateForm,
     CategoryModelForm,
     FollowUpModelForm,
-    ExpenseModelForm
+    ExpenseModelForm,
 )
 
 
@@ -457,26 +457,39 @@ class FollowUpDeleteView(OrganisorAndLoginRequiredMixin, generic.DeleteView):
             queryset = queryset.filter(lead__agent__user=user)
         return queryset
 
-class ExpenseCreateView(LoginRequiredMixin, generic.CreateView):
-    template_name = "leads/expense_create.html"
-    form_class = ExpenseModelForm
+#create a view for the expence create view
+def ExpensecreateView(request):
+    submited = False
+    if request.method == 'POST':
+        form = ExpenseModelForm(request.POST)
+        if form.is_valid():
+            expense = form.save(commit=False)
+            expense.save()
+            submited = True
+    else:
+        form = ExpenseModelForm()
+    return render(request, 'leads/expense_create.html', {'form': form, 'submited': submited})
+    # form = ExpenseModelForm
+    # return render(request, 'leads/expense_create.html', {'form': form})
 
-    def get_success_url(self):
-        return reverse("leads:lead-detail", kwargs={"pk": self.kwargs["pk"]})
 
-    def get_context_data(self, **kwargs):
-        context = super(ExpenseCreateView, self).get_context_data(**kwargs)
-        context.update({
-            "lead": Lead.objects.get(pk=self.kwargs["pk"])
-        })
-        return context
 
-    def form_valid(self, form):
-        lead = Lead.objects.get(pk=self.kwargs["pk"])
-        expense = form.save(commit=False)
-        expense.lead = lead
-        expense.save()
-        return super(ExpenseCreateView, self).form_valid(form)
+    # def get_success_url(self):
+    #     return reverse("leads:lead-detail", kwargs={"pk": self.kwargs["pk"]})
+        # return reverse("leads:expense-list")
+
+    # def get_context_data(self, **kwargs):
+    #     context = super(ExpensecreateView, self).get_context_data(**kwargs)
+    #     context.update({
+    #         "lead": Lead.objects.get(pk=self.kwargs["pk"])
+    #     })
+    #     return context
+
+    # def form_valid(self, form):
+    #     lead = Lead.objects.get(pk=self.kwargs["pk"])
+    #     expense = form.save(commit=False)
+
+
 
 # def lead_update(request, pk):
 #     lead = Lead.objects.get(id=pk)
